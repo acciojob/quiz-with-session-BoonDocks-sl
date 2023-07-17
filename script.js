@@ -27,6 +27,7 @@ const questions = [
   },
 ];
 
+
 // Retrieve saved progress from session storage or initialize an empty array
 const progress = JSON.parse(sessionStorage.getItem("progress")) || [];
 
@@ -67,31 +68,17 @@ function renderQuestions() {
       questionElement.appendChild(choiceText);
     }
 
+    // Append a default radio button option for each question
+    const defaultChoiceElement = document.createElement("input");
+    defaultChoiceElement.setAttribute("type", "radio");
+    defaultChoiceElement.setAttribute("name", `question-${i}`);
+    defaultChoiceElement.setAttribute("value", "");
+    defaultChoiceElement.setAttribute("checked", true);
+    defaultChoiceElement.style.display = "none";
+    questionElement.appendChild(defaultChoiceElement);
+
     questionsElement.appendChild(questionElement);
   }
 }
 
 renderQuestions();
-
-// Get the submit button and score element
-const submitButton = document.getElementById("submit");
-const scoreElement = document.getElementById("score");
-
-// Event listener for submitting the quiz
-submitButton.addEventListener("click", function () {
-  const score = calculateScore();
-  localStorage.setItem("score", score);
-  scoreElement.textContent = `Your score is ${score} out of 5.`;
-});
-
-// Function to calculate the user's score
-function calculateScore() {
-  let score = 0;
-  for (let i = 0; i < questions.length; i++) {
-    const question = questions[i];
-    if (userAnswers[i] === question.answer) {
-      score++;
-    }
-  }
-  return score;
-}
