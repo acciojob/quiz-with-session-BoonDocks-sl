@@ -1,4 +1,4 @@
-// Define the quiz questions
+// Quiz questions
 const questions = [
   {
     question: "What is the capital of France?",
@@ -27,109 +27,61 @@ const questions = [
   },
 ];
 
-// Function to render the quiz questions
-function renderQuestions() {
-  const quizContainer = document.getElementById("quiz-container");
-
-  // Check if there is progress stored in session storage
-  const savedProgress = sessionStorage.getItem("progress");
-  let progress = savedProgress ? JSON.parse(savedProgress) : {};
-
-  questions.forEach((question, index) => {
-    const questionElement = document.createElement("div");
-    questionElement.className = "question";
-
-    const questionText = document.createElement("h3");
-    questionText.textContent = `${index + 1}. ${question.question}`;
-    questionElement.appendChild(questionText);
-
-    const choicesContainer = document.createElement("div");
-    question.choices.forEach((choice, choiceIndex) => {
-      const choiceElement = document.createElement("div");
-      choiceElement.className = "choice";
-
-      const input = document.createElement("input");
-      input.type = "radio";
-      input.name = `question-${index}`;
-      input.value = choice;
-      input.checked = progress[index] === choice; // Check if this choice was selected previously
-
-      input.addEventListener("change", (event) => {
-        const selectedChoice = event.target.value;
-
-        // Store the selected choice in session storage
-        progress[index] = selectedChoice;
-        sessionStorage.setItem("progress", JSON.stringify(progress));
-      });
-
-      const label = document.createElement("label");
-      label.textContent = choice;
-      choiceElement.appendChild(input);
-      choiceElement.appendChild(label);
-
-      choicesContainer.appendChild(choiceElement);
-    });
-
-    questionElement.appendChild(choicesContainer);
-    quizContainer.appendChild(questionElement);
-  });
+// Retrieve user progress from session storage
+let userAnswers = sessionStorage.getItem("progress");
+if (userAnswers) {
+  userAnswers = JSON.parse(userAnswers);
+} else {
+  userAnswers = [];
 }
 
-// Render the quiz questions
+// Display the quiz questions and choices
+const questionsElement = document.getElementById("questions");
+
+function renderQuestions() {
+  for (let i = 0; i < questions.length; i++) {
+    const question = questions[i];
+    const questionElement = document.createElement("div");
+    const questionText = document.createTextNode(question.question);
+    questionElement.appendChild(questionText);
+    for (let j = 0; j < question.choices.length; j++) {
+      const choice = question.choices[j];
+      const choiceElement = document.createElement("input");
+      choiceElement.setAttribute("type", "radio");
+      choiceElement.setAttribute("name", `question-${i}`);
+      choiceElement.setAttribute("value", choice);
+      if (userAnswers[i] === choice) {
+        choiceElement.setAttribute("checked", true);
+      }
+      const choiceText = document.createTextNode(choice);
+      questionElement.appendChild(choiceElement);
+      questionElement.appendChild(choiceText);
+    }
+    questionsElement.appendChild(questionElement);
+  }
+}
 renderQuestions();
 
-// Function to calculate the score and display it
-function calculateScore() {
-  const quizContainer = document.getElementById("quiz-container");
+// Save user progress to session storage when an option is selected
+questionsElement.addEventListener("change", function (event) {
+  const selectedChoice = event.target.value;
+  const questionIndex = event.target.getAttribute("name").split("-")[1];
+  userAnswers[questionIndex] = selectedChoice;
+  sessionStorage.setItem("progress", JSON.stringify(userAnswers));
+});
 
-  // Remove the quiz questions
-  while (quizContainer.firstChild) {
-    quizContainer.removeChild(quizContainer.firstChild);
-  }
+// Submit the quiz and calculate the score
+const submitButton = document.getElementById("submit");
+const scoreElement = document.getElementById("score");
 
-  // Get the saved progress from session storage
-  const savedProgress = sessionStorage.getItem("progress");
-  const progress = savedProgress ? JSON.parse(savedProgress) : {};
-
+submitButton.addEventListener("click", function () {
+  const correctAnswers = questions.map((question) => question.answer);
   let score = 0;
-
-  questions.forEach((question, index) => {
-    const selectedChoice = progress[index];
-    const isCorrect = selectedChoice === question.answer;
-
-    if (isCorrect) {
+  for (let i = 0; i < correctAnswers.length; i++) {
+    if (userAnswers[i] === correctAnswers[i]) {
       score++;
     }
-
-    const questionElement = document.createElement("div");
-    questionElement.className = "question";
-
-    const questionText = document.createElement("h3");
-    questionText.textContent = `${index + 1}. ${question.question}`;
-    questionElement.appendChild(questionText);
-
-    const selectedChoiceElement = document.createElement("p");
-    selectedChoiceElement.textContent = `Your answer: ${selectedChoice}`;
-    questionElement.appendChild(selectedChoiceElement);
-
-    const isCorrectElement = document.createElement("p");
-    isCorrectElement.textContent = `Correct answer: ${question.answer}`;
-    questionElement.appendChild(isCorrectElement);
-
-    quizContainer.appendChild(questionElement);
-  });
-
-  const scoreElement = document.createElement("p");
+  }
   scoreElement.textContent = `Your score is ${score} out of ${questions.length}.`;
-
-  // Store the score in local storage
   localStorage.setItem("score", score);
-
-  quizContainer.appendChild(scoreElement);
-}
-
-// Call calculateScore function when the user clicks on the submit button
-document.addEventListener("DOMContentLoaded", () => {
-  const submitButton = document.getElementById("submit-button");
-  submitButton.addEventListener("click", calculateScore);
 });
